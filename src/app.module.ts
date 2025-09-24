@@ -7,7 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user/entities/user.entity';
 import { AuthorBookModule } from './author-book/author-book.module';
-
+import { CacheModule } from '@nestjs/cache-manager';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -19,15 +19,16 @@ import { AuthorBookModule } from './author-book/author-book.module';
         host: configservice.get('DB_HOST'),
         port: +configservice.get('DB_PORT'),
         entities: [User],
-        username: configservice.get('DB_USER'),
-        password: configservice.get('DB_PASSWORD'),
-        database: configservice.get('DB_NAME'),
+        username: configservice.get('POSTGRES_USER'),
+        password: configservice.get('POSTGRES_PASSWORD'),
+        database: configservice.get('POSTGRES_DB'),
         synchronize: true,
       }),
     }),
     UserModule,
     AuthModule,
     AuthorBookModule,
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [AppService],
