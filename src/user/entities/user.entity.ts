@@ -14,7 +14,6 @@ export class User {
 
   @Column({
     nullable: false,
-    select: false,
   })
   password: string;
 
@@ -26,7 +25,17 @@ export class User {
   @Column({
     nullable: true,
   })
-  refreshToken: string;
+  avatarPublicId: string;
+
+  @Column({
+    nullable: true,
+  })
+  country: string;
+
+  @Column({
+    nullable: true,
+  })
+  phone: string;
 
   @BeforeInsert()
   async hashPassword() {

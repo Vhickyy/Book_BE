@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,48 +8,57 @@ import { LoginUserDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './types/jwt_payload';
-import refreshJwtConfig from 'src/config/refresh.jwt.config';
-import type { ConfigType } from '@nestjs/config';
-import * as argon2 from 'argon2';
 import { UserService } from 'src/user/user.service';
+import { RefreshCacheService } from 'src/redis/refresh-cache/refresh-cache.service';
+import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
-    @Inject(refreshJwtConfig.KEY)
-    private refreshJwt: ConfigType<typeof refreshJwtConfig>,
     private userService: UserService,
+    private refreshCacheService: RefreshCacheService,
+    private cloudinary: CloudinaryService,
   ) {}
 
-  async registerUser(userPayload: RegisterUserDto) {
+  async registerUser(userPayload: RegisterUserDto, avatarPublicId: string) {
     const findUser = await this.userService.findUserByEmail(userPayload.email);
     if (findUser) throw new ConflictException('Email already exist.');
+    let avatarUrl;
+    if (avatarPublicId) {
+      const avatar = await this.refreshCacheService.getCache(
+        `avatar:${avatarPublicId}`,
+      );
+      if (avatar) {
+        const res = await this.cloudinary.renameFile(
+          avatarPublicId,
+          avatarPublicId.replace('temp_avatars/avatar_url', 'books/avatars'),
+        );
+        console.log({ avatarUrl });
+      }
+    }
     const user = await this.userService.createUser(userPayload);
-    return user;
+    const { password, ...rest } = user;
+    return { sucess: true, user: rest };
   }
 
   async loginUser(userId: string) {
-    const { accessToken, refreshToken } = await this.generateTokens(userId);
-    const hashRefreshToken = await argon2.hash(refreshToken);
-    await this.userService.updateRefreshToken(userId, hashRefreshToken);
-    return {
-      id: userId,
-      accessToken,
-      refreshToken,
-    };
+    try {
+      const accessToken = await this.generateTokens(userId);
+      const sessionId = await this.refreshCacheService.setRefreshTokenCache();
+      return {
+        accessToken,
+        sessionId,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async generateTokens(userId: string) {
     const payload: JwtPayload = { sub: userId };
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload),
-      this.jwtService.signAsync(payload, this.refreshJwt),
-    ]);
-    return {
-      accessToken,
-      refreshToken,
-    };
+    const accessToken = this.jwtService.sign(payload);
+    return accessToken;
   }
 
   async validateUser(userPayload: LoginUserDto) {
@@ -59,7 +67,6 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid email and password.');
     }
-
     const isCorrectPassword = await bcrypt.compare(password, user.password);
     if (!isCorrectPassword) {
       throw new UnauthorizedException('Invalid email and password.');
@@ -67,31 +74,26 @@ export class AuthService {
     return { id: user.id };
   }
 
+  async uploadAvatar(avatar: Express.Multer.File) {
+    const cloudinaryResponse = await this.cloudinary.uploadFile(
+      avatar,
+      'temp/avatar_url',
+    );
+    console.log(cloudinaryResponse);
+    // avatar should be a base64 string or file buffer from frontend
+    return {};
+  }
+
   async refreshToken(userId: string) {
-    const { accessToken, refreshToken } = await this.generateTokens(userId);
-    const hashRefreshToken = await argon2.hash(refreshToken);
-    await this.userService.updateRefreshToken(userId, hashRefreshToken);
+    const accessToken = await this.generateTokens(userId);
+    const sessionId = await this.refreshCacheService.setRefreshTokenCache();
     return {
-      id: userId,
       accessToken,
-      refreshToken,
+      sessionId,
     };
   }
 
-  async validateRefreshToken(userId: string, refreshToken: string) {
-    const user = await this.userService.findOne(userId);
-    if (!user || !user.refreshToken)
-      throw new UnauthorizedException('Invalid refresh token.');
-    const isValidRefreshToken = await argon2.verify(
-      refreshToken,
-      user.refreshToken,
-    );
-    if (!isValidRefreshToken)
-      throw new UnauthorizedException('Invalid refresh token.');
-    return userId;
-  }
-
   async logoutUser(userId: string) {
-    await this.userService.updateRefreshToken(userId);
+    // await this.userService.updateRefreshToken(userId);
   }
 }

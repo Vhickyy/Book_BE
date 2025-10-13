@@ -7,9 +7,30 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user/entities/user.entity';
 import { AuthorBookModule } from './author-book/author-book.module';
-import { CacheModule } from '@nestjs/cache-manager';
+import { CacheModule, CacheOptions } from '@nestjs/cache-manager';
+import { RefreshCacheService } from './redis/refresh-cache/refresh-cache.service';
+import { RefreshCacheModule } from './redis/refresh-cache/refresh-cache.module';
+import KeyvRedis, { Keyv } from '@keyv/redis';
+import { CacheableMemory } from 'cacheable';
+import { CloudinaryModule } from './services/cloudinary/cloudinary.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 @Module({
   imports: [
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        ttl: 300,
+        stores: [
+          new Keyv({
+            store: new CacheableMemory({ ttl: 60000 }),
+          }),
+          new KeyvRedis(configService.get('REDIS_URL')),
+        ],
+      }),
+    }),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -28,7 +49,11 @@ import { CacheModule } from '@nestjs/cache-manager';
     UserModule,
     AuthModule,
     AuthorBookModule,
-    CacheModule,
+    RefreshCacheModule,
+    MulterModule.register({
+      storage: memoryStorage(),
+    }),
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

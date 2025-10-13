@@ -13,10 +13,6 @@ export class UserService {
     return this.userRepo.save(user);
   }
 
-  async updateRefreshToken(userId: string, refreshToken?: string) {
-    return this.userRepo.update({ id: userId }, { refreshToken });
-  }
-
   async findUserByEmail(email: string) {
     return this.userRepo.findOne({
       where: { email },
@@ -26,7 +22,6 @@ export class UserService {
   async findOne(id: string) {
     return this.userRepo.findOne({
       where: { id },
-      select: ['refreshToken'],
     });
   }
 
