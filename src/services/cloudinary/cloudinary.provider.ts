@@ -12,4 +12,5 @@ export const CloudinaryProvider = {
 
     return cloudinary;
   },
+  inject: [ConfigService],
 };
