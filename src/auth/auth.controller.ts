@@ -55,6 +55,8 @@ export class AuthController {
   @Post('upload-avatar')
   @UseInterceptors(FileInterceptor('avatar'))
   async uploadAvatar(@UploadedFile() avatar: Express.Multer.File) {
+    console.log({ avatar });
+
     if (!avatar) {
       throw new BadRequestException('No avatar uploaded');
     }

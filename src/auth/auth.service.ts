@@ -145,12 +145,14 @@ export class AuthService {
         avatar,
         'temp/avatar_url',
       );
+      console.log({ cloudinaryResponse });
+
       // change to cookies or session
-      this.refreshCacheService.setInCache({
-        name: `avatar:${cloudinaryResponse.public_id}`,
-        data: cloudinaryResponse.public_id,
-        expiration: 24 * 60 * 60,
-      });
+      // this.refreshCacheService.setInCache({
+      //   name: `avatar:${cloudinaryResponse.public_id}`,
+      //   data: cloudinaryResponse.public_id,
+      //   expiration: 24 * 60 * 60,
+      // });
 
       return { avatarUrl: cloudinaryResponse.public_id };
     } catch (error) {
