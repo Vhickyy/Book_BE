@@ -10,6 +10,8 @@ import { JWTStrategy } from './strategies/jwt_strategy';
 import { UserModule } from 'src/user/user.module';
 import { RefreshCacheModule } from 'src/redis/refresh-cache/refresh-cache.module';
 import { CloudinaryModule } from 'src/services/cloudinary/cloudinary.module';
+import { TokenModule } from 'src/services/token/token.module';
+import { TokenService } from 'src/services/token/token.service';
 
 @Module({
   imports: [
@@ -19,6 +21,7 @@ import { CloudinaryModule } from 'src/services/cloudinary/cloudinary.module';
     UserModule,
     RefreshCacheModule,
     CloudinaryModule,
+    TokenModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JWTStrategy],

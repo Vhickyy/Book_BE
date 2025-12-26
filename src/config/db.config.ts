@@ -13,6 +13,6 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
     password: configService.get<string>('POSTGRES_PASSWORD'),
     database: configService.get<string>('POSTGRES_DB'),
     entities: [User],
-    synchronize: true,
+    synchronize: configService.get<string>('NODE_ENV') == 'environment',
   }),
 };

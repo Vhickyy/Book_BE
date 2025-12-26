@@ -19,6 +19,7 @@ export class RefreshCacheService {
     );
     return sessionId;
   }
+
   async setInCache({
     name,
     data,
@@ -30,7 +31,11 @@ export class RefreshCacheService {
   }): Promise<string> {
     return this.cacheManager.set(name, data, expiration);
   }
+
   async getCache(name: string) {
+    const name2 = await this.cacheManager.get(name);
+    console.log({ name2 });
+
     return this.cacheManager.get(name);
   }
 }

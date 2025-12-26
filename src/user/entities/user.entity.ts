@@ -1,5 +1,6 @@
 import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from 'src/utils/user_role';
 
 @Entity()
 export class User {
@@ -25,7 +26,17 @@ export class User {
   @Column({
     nullable: true,
   })
-  avatarPublicId: string;
+  firstName: string;
+
+  @Column({
+    nullable: true,
+  })
+  lastName: string;
+
+  @Column({
+    nullable: true,
+  })
+  phone: string;
 
   @Column({
     nullable: true,
@@ -35,7 +46,19 @@ export class User {
   @Column({
     nullable: true,
   })
-  phone: string;
+  confirmEmailOtp: string;
+
+  @Column({
+    default: false,
+  })
+  isVerified: boolean;
+
+  @Column({
+    nullable: false,
+    default: UserRole.USER,
+    enum: UserRole,
+  })
+  role: string;
 
   @BeforeInsert()
   async hashPassword() {

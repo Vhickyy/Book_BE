@@ -31,7 +31,10 @@ export class CloudinaryService {
     });
   }
 
-  async renameFile(oldPublicId: string, newPublicId: string): Promise<any> {
+  async renameFile(
+    oldPublicId: string,
+    newPublicId: string,
+  ): Promise<UploadApiResponse> {
     return this.cloudinary.uploader.rename(oldPublicId, newPublicId, {
       overwrite: true,
     });
